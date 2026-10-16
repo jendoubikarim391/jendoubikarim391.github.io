@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html,body{margin:0}</style>
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Ginestra Guest Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: chat on the left as the guest sees it, host view on the right as the owner sees it. Stacks on phones. */
+:root {
+  --bg: #eef2f1;
+  --surface: #ffffff;
+  --ink: #14201f;
+  --muted: #55696a;
+  --line: #d3dedc;
+  --teal: #0e5f5c;
+  --teal-soft: #dcebe9;
+  --on-teal: #ffffff;
+  --sulfur: #e9c441;
+  --on-sulfur: #3b3000;
+  --bot: #e6efed;
+  --good: #1f7a4d;
+  --warn: #a85a12;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1716;
+    --surface: #152221;
+    --ink: #e4efed;
+    --muted: #93aaa7;
+    --line: #284240;
+    --teal: #58bdb6;
+    --teal-soft: #1b3836;
+    --on-teal: #06211f;
+    --bot: #1c2f2d;
+    --good: #5fc596;
+    --warn: #e8a35e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1716;
+  --surface: #152221;
+  --ink: #e4efed;
+  --muted: #93aaa7;
+  --line: #284240;
+  --teal: #58bdb6;
+  --teal-soft: #1b3836;
+  --on-teal: #06211f;
+  --bot: #1c2f2d;
+  --good: #5fc596;
+  --warn: #e8a35e;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 32px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.pill { background: var(--sulfur); color: var(--on-sulfur); font-weight: 600; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 99px; }
+.langs { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 3px; gap: 2px; }
+.langs button { font: inherit; font-weight: 600; font-size: 0.85rem; min-width: 48px; min-height: 40px; border: 0; background: transparent; color: var(--muted); border-radius: 7px; cursor: pointer; }
+.langs button[aria-pressed="true"] { background: var(--teal); color: var(--on-teal); }
+.intro { margin: 0; color: var(--muted); max-width: 68ch; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.panel-head { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
+.panel-head h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; margin: 0; }
+.panel-head p { margin: 0; color: var(--muted); font-size: 0.85rem; }
+
+.chat-log { height: 430px; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
+@media (max-width: 860px) { .chat-log { height: 380px; } }
+.msg { max-width: 86%; padding: 9px 13px; border-radius: 14px; overflow-wrap: anywhere; }
+.msg.bot { background: var(--bot); border-bottom-left-radius: 4px; align-self: flex-start; }
+.msg.user { background: var(--teal); color: var(--on-teal); border-bottom-right-radius: 4px; align-self: flex-end; }
+.msg.form { width: 100%; max-width: 100%; }
+.form-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+@media (max-width: 460px) { .form-fields { grid-template-columns: minmax(0, 1fr); } }
+.field { display: flex; flex-direction: column; gap: 3px; font-size: 0.8rem; color: var(--muted); min-width: 0; }
+.field input { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 40px; width: 100%; min-width: 0; }
+.btn { font: inherit; font-weight: 600; border: 0; background: var(--teal); color: var(--on-teal); border-radius: 9px; padding: 0 16px; min-height: 42px; cursor: pointer; }
+.err { color: var(--warn); font-size: 0.82rem; margin: 6px 0 0; }
+.ok { color: var(--good); font-weight: 600; margin: 0; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 18px 12px; }
+.chips-label { padding: 0 18px 6px; font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+.chip { font: inherit; font-size: 0.85rem; background: var(--teal-soft); color: var(--ink); border: 1px solid var(--line); border-radius: 99px; padding: 0 13px; min-height: 40px; cursor: pointer; }
+.composer { display: flex; gap: 8px; padding: 12px 18px 16px; border-top: 1px solid var(--line); }
+.composer input { flex: 1; min-width: 0; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 9px; padding: 0 12px; min-height: 42px; }
+
+:focus-visible { outline: 3px solid var(--sulfur); outline-offset: 2px; }
+input:focus-visible { outline-offset: 0; }
+
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 1px solid var(--line); }
+.stat { padding: 14px 18px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--line); min-width: 0; }
+.stat:last-child { border-right: 0; }
+.stat b { font-family: var(--font-display); font-size: 1.9rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 0.78rem; color: var(--muted); }
+.stat.warn b { color: var(--warn); }
+@media (max-width: 460px) { .stat { padding: 12px 10px; } .stat b { font-size: 1.5rem; } }
+.block { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.block:last-child { border-bottom: 0; }
+.block h3 { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin: 0; }
+.empty { color: var(--muted); font-size: 0.88rem; margin: 0; }
+.topic { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; font-size: 0.9rem; }
+.topic i { grid-column: 1 / -1; height: 6px; border-radius: 4px; background: var(--teal); display: block; }
+.topic span:last-child { font-variant-numeric: tabular-nums; color: var(--muted); }
+.req, .unq { border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; font-size: 0.88rem; overflow-wrap: anywhere; }
+.req { border-left: 4px solid var(--sulfur); }
+.unq { border-left: 4px solid var(--warn); }
+.note { margin: 0; font-size: 0.82rem; color: var(--muted); max-width: 80ch; }
+
+@media (prefers-reduced-motion: reduce) { .chat-log { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1 id="t-title"></h1><span class="pill" id="t-pill"></span></div>
+    <div class="langs" role="group" aria-label="Language" id="langs"></div>
+  </header>
+  <p class="intro" id="t-intro"></p>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="chat-h">
+      <div class="panel-head"><h2 id="chat-h">Casa Ginestra</h2><p id="t-chatsub"></p></div>
+      <div class="chat-log" id="log" role="log" aria-live="polite"></div>
+      <div class="chips-label" id="t-try"></div>
+      <div class="chips" id="chips"></div>
+      <form class="composer" id="composer" autocomplete="off">
+        <input id="q" type="text" aria-label="Message">
+        <button class="btn" type="submit" id="t-send"></button>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="host-h">
+      <div class="panel-head"><h2 id="host-h"></h2><p id="t-hostsub"></p></div>
+      <div class="stats">
+        <div class="stat"><b id="s-q">0</b><span id="t-sq"></span></div>
+        <div class="stat"><b id="s-a">0</b><span id="t-sa"></span></div>
+        <div class="stat warn"><b id="s-p">0</b><span id="t-sp"></span></div>
+      </div>
+      <div class="block"><h3 id="t-topics"></h3><div id="topics"></div></div>
+      <div class="block"><h3 id="t-requests"></h3><div id="requests"></div></div>
+      <div class="block"><h3 id="t-unanswered"></h3><div id="unanswered"></div></div>
+    </section>
+  </div>
+
+  <p class="note" id="t-note"></p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var UI = {
+    it: {
+      title: 'Assistente ospiti', pill: 'Demo',
+      intro: 'Una casa vacanze che risponde agli ospiti in italiano, inglese e ucraino, a qualsiasi ora. Casa Ginestra è una struttura inventata, con dati di esempio.',
+      chatsub: 'Quello che vede l’ospite', try_: 'Prova a chiedere', placeholder: 'Scrivi una domanda…', send: 'Invia',
+      greeting: 'Ciao! Sono l’assistente di Casa Ginestra. Chiedimi di check-in, Wi-Fi, parcheggio, terme, spiagge, oppure richiedi un soggiorno.',
+      fallback: 'Non sono sicuro di aver capito. Passo la tua domanda al padrone di casa, che ti risponde appena possibile.',
+      hostTitle: 'Vista del padrone di casa', hostSub: 'Quello che vede il proprietario mentre gli ospiti chattano',
+      sq: 'Domande', sa: 'Risposte automatiche', sp: 'Passate a te',
+      topics: 'Argomenti più richiesti', noTopics: 'Gli argomenti compaiono man mano che gli ospiti chiedono.',
+      requests: 'Richieste di soggiorno', noRequests: 'Nessuna richiesta. Prova “Richiedi un soggiorno”.',
+      unanswered: 'Domande senza risposta', noUnanswered: 'Nessuna finora.',
+      name: 'Nome', arrive: 'Arrivo', depart: 'Partenza', guests: 'Ospiti', submit: 'Registra richiesta',
+      formIntro: 'Volentieri! Compila questi campi e il padrone di casa riceve la tua richiesta.',
+      errFill: 'Compila tutti i campi.', errDates: 'La partenza deve essere dopo l’arrivo.',
+      done: 'Richiesta registrata. In una versione reale il padrone di casa la riceve subito su WhatsApp o email.',
+      note: 'Questa pagina è una demo con risposte di esempio fisse. Una versione reale usa i dati della tua struttura e può rispondere anche a domande libere con l’AI.',
+      reqFmt: function (r, d) { return r.name + ', ' + r.guests + ' ospiti, ' + d(r.arrive) + ' → ' + d(r.depart); },
+      chips: ['Orario check-in', 'Password Wi-Fi', 'Animali ammessi?', 'Come arrivo dalla stazione?', 'Richiedi un soggiorno']
+    },
+    en: {
+      title: 'Guest assistant', pill: 'Demo',
+      intro: 'A holiday rental that answers guests in Italian, English and Ukrainian at any hour. Casa Ginestra is an invented property with example data.',
+      chatsub: 'What the guest sees', try_: 'Try asking', placeholder: 'Type a question…', send: 'Send',
+      greeting: 'Hello! I’m the Casa Ginestra assistant. Ask me about check-in, Wi-Fi, parking, thermal baths, beaches, or request a stay.',
+      fallback: 'I’m not sure I understood. I’ll pass your question to the host, who will reply as soon as possible.',
+      hostTitle: 'Host view', hostSub: 'What the owner sees while guests chat',
+      sq: 'Questions', sa: 'Answered automatically', sp: 'Passed to host',
+      topics: 'Most asked topics', noTopics: 'Topics appear as guests ask.',
+      requests: 'Stay requests', noRequests: 'No requests yet. Try “Request a stay”.',
+      unanswered: 'Questions I could not answer', noUnanswered: 'None so far.',
+      name: 'Name', arrive: 'Arrival', depart: 'Departure', guests: 'Guests', submit: 'Save request',
+      formIntro: 'Happy to help. Fill in these details and the host receives your request.',
+      errFill: 'Please fill in all fields.', errDates: 'Departure must be after arrival.',
+      done: 'Request saved. In a live setup the host gets it right away on WhatsApp or email.',
+      note: 'This page is a demo with fixed example answers. A live version is set up with your own listing details and can also answer free-form questions with AI.',
+      reqFmt: function (r, d) { return r.name + ', ' + r.guests + ' guests, ' + d(r.arrive) + ' → ' + d(r.depart); },
+      chips: ['Check-in time', 'Wi-Fi password', 'Are pets allowed?', 'How do I get from the station?', 'Request a stay']
+    },
+    uk: {
+      title: 'Помічник для гостей', pill: 'Демо',
+      intro: 'Будинок для відпочинку, що відповідає гостям італійською, англійською та українською в будь-яку годину. Casa Ginestra вигадана, дані прикладові.',
+      chatsub: 'Що бачить гість', try_: 'Спробуйте запитати', placeholder: 'Напишіть питання…', send: 'Надіслати',
+      greeting: 'Вітаю! Я помічник Casa Ginestra. Запитайте про заселення, Wi-Fi, паркування, термальні джерела, пляжі або залиште запит на проживання.',
+      fallback: 'Не впевнений, що правильно зрозумів. Передам питання господарю, він відповість якнайшвидше.',
+      hostTitle: 'Вигляд господаря', hostSub: 'Що бачить власник, поки гості спілкуються',
+      sq: 'Питання', sa: 'Автовідповіді', sp: 'Передано вам',
+      topics: 'Найчастіші теми', noTopics: 'Теми з’являються, коли гості запитують.',
+      requests: 'Запити на проживання', noRequests: 'Запитів немає. Спробуйте «Запит на проживання».',
+      unanswered: 'Питання без відповіді', noUnanswered: 'Поки немає.',
+      name: 'Ім’я', arrive: 'Заїзд', depart: 'Виїзд', guests: 'Гості', submit: 'Записати запит',
+      formIntro: 'З радістю! Заповніть поля, і господар отримає ваш запит.',
+      errFill: 'Заповніть усі поля.', errDates: 'Виїзд має бути після заїзду.',
+      done: 'Запит записано. У реальній версії господар отримає його одразу у WhatsApp або на пошту.',
+      note: 'Це демо з фіксованими прикладами відповідей. Реальна версія налаштовується на дані вашого помешкання та може відповідати на довільні питання за допомогою ШІ.',
+      reqFmt: function (r, d) { return r.name + ', ' + r.guests + ' гост., ' + d(r.arrive) + ' → ' + d(r.depart); },
+      chips: ['Час заселення', 'Пароль Wi-Fi', 'Чи можна з тваринами?', 'Як дістатися від вокзалу?', 'Запит на проживання']
+    },
+    de: {
+      title: 'Gäste-Assistent', pill: 'Demo',
+      intro: 'Eine Ferienunterkunft, die Gästen rund um die Uhr auf Italienisch, Englisch, Ukrainisch, Deutsch und Französisch antwortet. Casa Ginestra ist eine erfundene Unterkunft mit Beispieldaten.',
+      chatsub: 'Was der Gast sieht', try_: 'Probieren Sie eine Frage', placeholder: 'Frage eingeben…', send: 'Senden',
+      greeting: 'Hallo! Ich bin der Assistent von Casa Ginestra. Fragen Sie mich nach Check-in, WLAN, Parken, Thermalbädern, Stränden oder fragen Sie einen Aufenthalt an.',
+      fallback: 'Ich bin nicht sicher, ob ich Sie richtig verstanden habe. Ich gebe Ihre Frage an den Gastgeber weiter, der sich so schnell wie möglich meldet.',
+      hostTitle: 'Ansicht des Gastgebers', hostSub: 'Was der Eigentümer sieht, während Gäste chatten',
+      sq: 'Fragen', sa: 'Automatisch beantwortet', sp: 'An Gastgeber weitergeleitet',
+      topics: 'Häufigste Themen', noTopics: 'Themen erscheinen, sobald Gäste fragen.',
+      requests: 'Aufenthaltsanfragen', noRequests: 'Noch keine Anfragen. Probieren Sie „Aufenthalt anfragen“.',
+      unanswered: 'Unbeantwortete Fragen', noUnanswered: 'Bisher keine.',
+      name: 'Name', arrive: 'Anreise', depart: 'Abreise', guests: 'Gäste', submit: 'Anfrage speichern',
+      formIntro: 'Gern! Füllen Sie diese Felder aus, dann erhält der Gastgeber Ihre Anfrage.',
+      errFill: 'Bitte alle Felder ausfüllen.', errDates: 'Die Abreise muss nach der Anreise liegen.',
+      done: 'Anfrage gespeichert. In einer echten Version erhält der Gastgeber sie sofort per WhatsApp oder E-Mail.',
+      note: 'Diese Seite ist eine Demo mit festen Beispielantworten. Eine echte Version nutzt die Daten Ihrer Unterkunft und kann auch freie Fragen mit KI beantworten.',
+      reqFmt: function (r, d) { return r.name + ', ' + r.guests + ' Gäste, ' + d(r.arrive) + ' → ' + d(r.depart); },
+      chips: ['Check-in-Zeit', 'WLAN-Passwort', 'Sind Haustiere erlaubt?', 'Wie komme ich vom Bahnhof hin?', 'Aufenthalt anfragen']
+    },
+    fr: {
+      title: 'Assistant voyageurs', pill: 'Démo',
+      intro: 'Une location de vacances qui répond aux voyageurs en italien, anglais, ukrainien, allemand et français, à toute heure. Casa Ginestra est un logement inventé, avec des données d’exemple.',
+      chatsub: 'Ce que voit le voyageur', try_: 'Essayez de demander', placeholder: 'Écrivez une question…', send: 'Envoyer',
+      greeting: 'Bonjour ! Je suis l’assistant de Casa Ginestra. Posez-moi vos questions sur l’arrivée, le Wi-Fi, le parking, les thermes, les plages, ou demandez un séjour.',
+      fallback: 'Je ne suis pas sûr d’avoir bien compris. Je transmets votre question à l’hôte, qui vous répondra dès que possible.',
+      hostTitle: 'Vue de l’hôte', hostSub: 'Ce que voit le propriétaire pendant que les voyageurs discutent',
+      sq: 'Questions', sa: 'Réponses automatiques', sp: 'Transmises à l’hôte',
+      topics: 'Sujets les plus demandés', noTopics: 'Les sujets apparaissent au fil des questions.',
+      requests: 'Demandes de séjour', noRequests: 'Aucune demande. Essayez « Demander un séjour ».',
+      unanswered: 'Questions sans réponse', noUnanswered: 'Aucune pour l’instant.',
+      name: 'Nom', arrive: 'Arrivée', depart: 'Départ', guests: 'Voyageurs', submit: 'Enregistrer la demande',
+      formIntro: 'Avec plaisir ! Remplissez ces champs et l’hôte recevra votre demande.',
+      errFill: 'Veuillez remplir tous les champs.', errDates: 'Le départ doit être après l’arrivée.',
+      done: 'Demande enregistrée. Dans une version réelle, l’hôte la reçoit aussitôt sur WhatsApp ou par e-mail.',
+      note: 'Cette page est une démo avec des réponses d’exemple fixes. Une version réelle utilise les données de votre logement et peut aussi répondre à des questions libres grâce à l’IA.',
+      reqFmt: function (r, d) { return r.name + ', ' + r.guests + ' voyageurs, ' + d(r.arrive) + ' → ' + d(r.depart); },
+      chips: ['Heure d’arrivée', 'Mot de passe Wi-Fi', 'Les animaux sont-ils acceptés ?', 'Comment venir depuis la gare ?', 'Demander un séjour']
+    },
+    ru: {
+      title: 'Помощник для гостей', pill: 'Демо',
+      intro: 'Дом для отдыха, который отвечает гостям на итальянском, английском, украинском, немецком, французском и русском в любое время. Casa Ginestra это вымышленное жильё с примерными данными.',
+      chatsub: 'Что видит гость', try_: 'Попробуйте спросить', placeholder: 'Напишите вопрос…', send: 'Отправить',
+      greeting: 'Здравствуйте! Я помощник Casa Ginestra. Спросите про заселение, Wi-Fi, парковку, термальные источники, пляжи или оставьте запрос на проживание.',
+      fallback: 'Не уверен, что правильно понял. Передам вопрос хозяину, он ответит как можно скорее.',
+      hostTitle: 'Вид хозяина', hostSub: 'Что видит владелец, пока гости общаются',
+      sq: 'Вопросы', sa: 'Автоответы', sp: 'Передано вам',
+      topics: 'Частые темы', noTopics: 'Темы появятся, когда гости начнут спрашивать.',
+      requests: 'Запросы на проживание', noRequests: 'Запросов пока нет. Попробуйте «Запрос на проживание».',
+      unanswered: 'Вопросы без ответа', noUnanswered: 'Пока нет.',
+      name: 'Имя', arrive: 'Заезд', depart: 'Выезд', guests: 'Гости', submit: 'Записать запрос',
+      formIntro: 'С радостью! Заполните поля, и хозяин получит ваш запрос.',
+      errFill: 'Заполните все поля.', errDates: 'Выезд должен быть позже заезда.',
+      done: 'Запрос записан. В реальной версии хозяин получит его сразу в WhatsApp или по почте.',
+      note: 'Это демо с фиксированными примерами ответов. Реальная версия настраивается на данные вашего жилья и может отвечать на любые вопросы с помощью ИИ.',
+      reqFmt: function (r, d) { return r.name + ', ' + r.guests + ' гост., ' + d(r.arrive) + ' → ' + d(r.depart); },
+      chips: ['Время заселения', 'Пароль от Wi-Fi', 'Можно с животными?', 'Как добраться от вокзала?', 'Запрос на проживание']
+    }
+  };
+
+  var FAQ = [
+    { id: 'checkin', topic: { it: 'Check-in e check-out', en: 'Check-in and check-out', uk: 'Заселення та виселення' },
+      keys: ['check', 'orari', 'a che ora', 'what time', 'заселен', 'заїзд', 'виїзд', 'виселен', 'о котрій'],
+      a: { it: 'Il check-in è dalle 15:00 alle 20:00. L’arrivo è autonomo: il giorno prima ricevi il codice della cassetta delle chiavi. Il check-out è entro le 10:30.',
+           en: 'Check-in is from 3:00 pm to 8:00 pm. Arrival is self-service: you get the key box code the day before. Check-out is by 10:30 am.',
+           uk: 'Заселення з 15:00 до 20:00. Заселення самостійне: код від сейфа з ключами ви отримаєте напередодні. Виселення до 10:30.' } },
+    { id: 'wifi', topic: { it: 'Wi-Fi', en: 'Wi-Fi', uk: 'Wi-Fi' },
+      keys: ['wifi', 'wi', 'fi', 'password', 'internet', 'парол', 'інтернет'],
+      a: { it: 'Rete: CasaGinestra-Ospiti. Password: ginestra-demo (dato di esempio). Il router è in soggiorno.',
+           en: 'Network: CasaGinestra-Guests. Password: ginestra-demo (example data). The router is in the living room.',
+           uk: 'Мережа: CasaGinestra-Guests. Пароль: ginestra-demo (приклад). Роутер у вітальні.' } },
+    { id: 'parking', topic: { it: 'Parcheggio', en: 'Parking', uk: 'Паркування' },
+      keys: ['parcheggi', 'parking', 'park', 'camper', 'паркув', 'паркін', 'машин', 'кемпер'],
+      a: { it: 'C’è un posto auto gratuito nel cortile, subito dopo il cancello. Per camper o furgoni più grandi, scrivimi prima.',
+           en: 'There is free parking in the courtyard, just inside the gate. For campers or larger vans, please write to me first.',
+           uk: 'Безкоштовне паркування у дворі, одразу за воротами. Для кемперів та великих фургонів напишіть мені заздалегідь.' } },
+    { id: 'pets', topic: { it: 'Animali', en: 'Pets', uk: 'Тварини' },
+      keys: ['animali', 'cane', 'cani', 'gatto', 'pets', 'pet', 'dog', 'cat', 'тварин', 'собак', 'кіт', 'кішк'],
+      a: { it: 'Sì, i cani di piccola e media taglia sono benvenuti, con un supplemento di 15 € a soggiorno. Chiedo di non lasciarli soli in casa e di tenerli lontani dai divani.',
+           en: 'Yes, small and medium dogs are welcome for a 15 € fee per stay. Please don’t leave them alone in the house, and keep them off the sofas.',
+           uk: 'Так, собаки малих і середніх порід вітаються, доплата 15 € за проживання. Прошу не залишати їх самих удома та не пускати на дивани.' } },
+    { id: 'spa', topic: { it: 'Terme', en: 'Thermal baths', uk: 'Термальні джерела' },
+      keys: ['terme', 'termal', 'spa', 'thermal', 'терм'],
+      a: { it: 'Le terme della zona sono a circa 10 minuti in auto. In settimana c’è meno gente. Orari e prezzi cambiano, quindi controlla il sito delle terme.',
+           en: 'The area’s thermal baths are about 10 minutes by car. Weekdays are quieter. Hours and prices change, so check the spa’s own website.',
+           uk: 'Термальні басейни в околиці приблизно за 10 хвилин на авто. У будні тихіше. Години роботи та ціни змінюються, перевіряйте на сайті терм.' } },
+    { id: 'beach', topic: { it: 'Spiaggia', en: 'Beach', uk: 'Пляж' },
+      keys: ['spiagg', 'mare', 'beach', 'sea', 'пляж', 'море'],
+      a: { it: 'Le spiagge più vicine sono a circa 15 minuti in auto. Porta l’ombrellone: ci sono tratti liberi e stabilimenti a pagamento.',
+           en: 'The nearest beaches are about 15 minutes by car. Bring a beach umbrella; there are free stretches and paid beach clubs.',
+           uk: 'Найближчі пляжі приблизно за 15 хвилин на авто. Візьміть парасольку: є безкоштовні ділянки та платні пляжні клуби.' } },
+    { id: 'bike', topic: { it: 'Bici', en: 'Cycling', uk: 'Велосипеди' },
+      keys: ['bici', 'bicicl', 'bike', 'cycling', 'cycle', 'велосипед', 'велик'],
+      a: { it: 'Ci sono percorsi in bici che partono vicino a casa e in cortile c’è uno spazio chiuso per le bici. Per il noleggio posso metterti in contatto con un servizio locale.',
+           en: 'Cycling routes start near the house, and there is a locked space in the courtyard for bikes. For rentals I can put you in touch with a local service.',
+           uk: 'Веломаршрути починаються поруч із будинком, у дворі є замкнене місце для велосипедів. Щодо оренди можу звести вас із місцевим сервісом.' } },
+    { id: 'rules', topic: { it: 'Regole della casa', en: 'House rules', uk: 'Правила' },
+      keys: ['regole', 'silenzio', 'fumare', 'fumo', 'quiet', 'rules', 'smoking', 'noise', 'правил', 'куріння', 'курити', 'тиша'],
+      a: { it: 'Silenzio dalle 22:30 alle 7:00. Non si fuma in casa, sul terrazzo sì. Feste ed eventi non sono consentiti.',
+           en: 'Quiet hours are 10:30 pm to 7:00 am. No smoking inside; the terrace is fine. Parties and events are not allowed.',
+           uk: 'Тиша з 22:30 до 7:00. У будинку не курити, на терасі можна. Вечірки та заходи не дозволені.' } },
+    { id: 'cancel', topic: { it: 'Cancellazione', en: 'Cancellation', uk: 'Скасування' },
+      keys: ['cancell', 'annull', 'cancel', 'refund', 'rimbors', 'скасув', 'повернен'],
+      a: { it: 'Cancellazione gratuita fino a 14 giorni prima dell’arrivo. Dopo, trattengo la prima notte.',
+           en: 'Free cancellation up to 14 days before arrival. After that, the first night is charged.',
+           uk: 'Безкоштовне скасування за 14 днів до заїзду. Пізніше утримується перша ніч.' } },
+    { id: 'price', topic: { it: 'Prezzi', en: 'Prices', uk: 'Ціни' },
+      keys: ['prezz', 'costo', 'costa', 'tariff', 'price', 'cost', 'rate', 'ціна', 'ціни', 'вартість', 'скільки коштує'],
+      a: { it: 'Da 95 € a notte per 2 persone in bassa stagione, da 130 € in estate (dati di esempio). Dimmi date e numero di ospiti e ti preparo un preventivo.',
+           en: 'From 95 € per night for 2 guests in low season, from 130 € in summer (example data). Tell me your dates and number of guests and I’ll prepare a quote.',
+           uk: 'Від 95 € за ніч для 2 гостей у низький сезон, від 130 € влітку (приклад). Напишіть дати та кількість гостей, і я підготую розрахунок.' } },
+    { id: 'contact', topic: { it: 'Contatti ed emergenze', en: 'Contact and emergencies', uk: 'Контакти та надзвичайні ситуації' },
+      keys: ['emergen', 'contatt', 'telefon', 'whatsapp', 'phone', 'contact', 'help', 'aiuto', 'надзвичайн', 'контакт', 'телефон', 'допомог'],
+      a: { it: 'In caso di emergenza chiama il 112. Per problemi in casa, il padrone di casa risponde su WhatsApp ogni giorno dalle 8:00 alle 21:00.',
+           en: 'In an emergency, call 112. For problems in the house, the host answers on WhatsApp every day from 8:00 am to 9:00 pm.',
+           uk: 'У надзвичайній ситуації телефонуйте 112. З питань щодо будинку господар відповідає у WhatsApp щодня з 8:00 до 21:00.' } },
+    { id: 'eat', topic: { it: 'Mangiare e spesa', en: 'Food and shopping', uk: 'Їжа та магазини' },
+      keys: ['ristorant', 'mangiar', 'supermerc', 'cena', 'restaurant', 'eat', 'dinner', 'supermarket', 'grocer', 'ресторан', 'магазин', 'супермаркет', 'вечеря'],
+      a: { it: 'Supermercati e ristoranti sono a 5 minuti di auto. Per le cene con cucina tipica, prenota in anticipo nel fine settimana.',
+           en: 'Supermarkets and restaurants are 5 minutes away by car. For traditional dinners, book ahead on weekends.',
+           uk: 'Супермаркети та ресторани за 5 хвилин на авто. Для вечері з місцевою кухнею бронюйте столик заздалегідь на вихідні.' } },
+    { id: 'transport', topic: { it: 'Come arrivare', en: 'Getting here', uk: 'Як дістатися' },
+      keys: ['stazion', 'treno', 'aeropor', 'taxi', 'station', 'train', 'airport', 'вокзал', 'станці', 'потяг', 'аеропорт', 'таксі'],
+      a: { it: 'La stazione di Campiglia Marittima è a circa 10 minuti in auto. L’aeroporto di Pisa è a circa 75 km. Posso consigliarti un taxi o un’auto a noleggio.',
+           en: 'Campiglia Marittima station is about 10 minutes by car. Pisa airport is about 75 km away. I can suggest a taxi or a rental car.',
+           uk: 'Станція Кампілья-Маріттіма приблизно за 10 хвилин на авто. Аеропорт Пізи приблизно за 75 км. Можу порадити таксі або оренду авто.' } },
+    { id: 'booking', topic: { it: 'Richieste di soggiorno', en: 'Stay requests', uk: 'Запити на проживання' }, form: true,
+      keys: ['prenot', 'book', 'reserv', 'disponib', 'availab', 'soggiorn', 'request', 'запит на', 'проживан', 'бронюв', 'бронь', 'вільн'],
+      a: { it: '', en: '', uk: '' } }
+  ];
+
+  var EXTRA = {
+    topic: {
+      checkin: { de: 'Check-in und Check-out', fr: 'Arrivée et départ', ru: 'Заселение и выезд' },
+      wifi: { de: 'WLAN', fr: 'Wi-Fi', ru: 'Wi-Fi' },
+      parking: { de: 'Parken', fr: 'Parking', ru: 'Парковка' },
+      pets: { de: 'Haustiere', fr: 'Animaux', ru: 'Животные' },
+      spa: { de: 'Thermalbäder', fr: 'Thermes', ru: 'Термальные источники' },
+      beach: { de: 'Strand', fr: 'Plage', ru: 'Пляж' },
+      bike: { de: 'Radfahren', fr: 'Vélo', ru: 'Велосипеды' },
+      rules: { de: 'Hausregeln', fr: 'Règlement', ru: 'Правила' },
+      cancel: { de: 'Stornierung', fr: 'Annulation', ru: 'Отмена' },
+      price: { de: 'Preise', fr: 'Tarifs', ru: 'Цены' },
+      contact: { de: 'Kontakt und Notfälle', fr: 'Contact et urgences', ru: 'Контакты и экстренные случаи' },
+      eat: { de: 'Essen und Einkaufen', fr: 'Repas et courses', ru: 'Еда и магазины' },
+      transport: { de: 'Anreise', fr: 'Accès', ru: 'Как добраться' },
+      booking: { de: 'Aufenthaltsanfragen', fr: 'Demandes de séjour', ru: 'Запросы на проживание' }
+    },
+    a: {
+      checkin: {
+        de: 'Check-in ist von 15:00 bis 20:00 Uhr. Die Ankunft ist selbstständig: Den Code für den Schlüsselkasten erhalten Sie am Vortag. Check-out bis 10:30 Uhr.',
+        fr: 'L’arrivée se fait de 15 h à 20 h, en autonomie : vous recevez la veille le code de la boîte à clés. Le départ est avant 10 h 30.',
+        ru: 'Заселение с 15:00 до 20:00. Заселение самостоятельное: код от ключницы вы получите накануне. Выезд до 10:30.' },
+      wifi: {
+        de: 'Netzwerk: CasaGinestra-Guests. Passwort: ginestra-demo (Beispieldaten). Der Router steht im Wohnzimmer.',
+        fr: 'Réseau : CasaGinestra-Guests. Mot de passe : ginestra-demo (donnée d’exemple). Le routeur est dans le salon.',
+        ru: 'Сеть: CasaGinestra-Guests. Пароль: ginestra-demo (пример). Роутер в гостиной.' },
+      parking: {
+        de: 'Es gibt einen kostenlosen Parkplatz im Hof, gleich hinter dem Tor. Für Wohnmobile oder größere Vans schreiben Sie mir bitte vorher.',
+        fr: 'Il y a un parking gratuit dans la cour, juste après le portail. Pour les camping-cars ou les grands vans, écrivez-moi d’abord.',
+        ru: 'Бесплатная парковка во дворе, сразу за воротами. Для кемперов и больших фургонов напишите мне заранее.' },
+      pets: {
+        de: 'Ja, kleine und mittelgroße Hunde sind willkommen, mit einem Aufschlag von 15 € pro Aufenthalt. Bitte lassen Sie sie nicht allein im Haus und halten Sie sie von den Sofas fern.',
+        fr: 'Oui, les chiens de petite et moyenne taille sont les bienvenus, avec un supplément de 15 € par séjour. Merci de ne pas les laisser seuls dans la maison et de les tenir à l’écart des canapés.',
+        ru: 'Да, собаки мелких и средних пород приветствуются, доплата 15 € за проживание. Прошу не оставлять их одних в доме и не пускать на диваны.' },
+      spa: {
+        de: 'Die Thermalbäder der Gegend sind etwa 10 Minuten mit dem Auto entfernt. Unter der Woche ist es ruhiger. Öffnungszeiten und Preise ändern sich, bitte prüfen Sie die Website der Therme.',
+        fr: 'Les thermes de la région sont à environ 10 minutes en voiture. La semaine, c’est plus calme. Horaires et tarifs changent, consultez le site des thermes.',
+        ru: 'Термальные бассейны в окрестностях примерно в 10 минутах на машине. В будни тише. Часы работы и цены меняются, смотрите на сайте терм.' },
+      beach: {
+        de: 'Die nächsten Strände sind etwa 15 Minuten mit dem Auto entfernt. Bringen Sie einen Sonnenschirm mit: Es gibt freie Abschnitte und kostenpflichtige Strandbäder.',
+        fr: 'Les plages les plus proches sont à environ 15 minutes en voiture. Prenez un parasol : il y a des tronçons libres et des plages privées payantes.',
+        ru: 'Ближайшие пляжи примерно в 15 минутах на машине. Возьмите зонт: есть бесплатные участки и платные пляжные клубы.' },
+      bike: {
+        de: 'Radwege beginnen in der Nähe des Hauses, und im Hof gibt es einen abschließbaren Platz für Fahrräder. Für einen Verleih stelle ich gern den Kontakt zu einem lokalen Anbieter her.',
+        fr: 'Des itinéraires à vélo partent près de la maison et il y a un espace fermé à clé pour les vélos dans la cour. Pour une location, je peux vous mettre en contact avec un service local.',
+        ru: 'Велосипедные маршруты начинаются рядом с домом, во дворе есть запирающееся место для велосипедов. По аренде могу связать вас с местным сервисом.' },
+      rules: {
+        de: 'Ruhezeit von 22:30 bis 7:00 Uhr. Im Haus ist Rauchen nicht erlaubt, auf der Terrasse schon. Partys und Veranstaltungen sind nicht gestattet.',
+        fr: 'Silence de 22 h 30 à 7 h. Interdiction de fumer à l’intérieur, la terrasse est autorisée. Les fêtes et événements ne sont pas permis.',
+        ru: 'Тишина с 22:30 до 7:00. В доме не курить, на террасе можно. Вечеринки и мероприятия не разрешены.' },
+      cancel: {
+        de: 'Kostenlose Stornierung bis 14 Tage vor Anreise. Danach wird die erste Nacht berechnet.',
+        fr: 'Annulation gratuite jusqu’à 14 jours avant l’arrivée. Ensuite, la première nuit est facturée.',
+        ru: 'Бесплатная отмена за 14 дней до заезда. Позже удерживается первая ночь.' },
+      price: {
+        de: 'Ab 95 € pro Nacht für 2 Gäste in der Nebensaison, ab 130 € im Sommer (Beispieldaten). Nennen Sie mir Reisezeitraum und Gästezahl, dann erstelle ich Ihnen ein Angebot.',
+        fr: 'À partir de 95 € la nuit pour 2 personnes en basse saison, à partir de 130 € en été (données d’exemple). Indiquez-moi vos dates et le nombre de voyageurs et je prépare un devis.',
+        ru: 'От 95 € за ночь для 2 гостей в низкий сезон, от 130 € летом (пример). Напишите даты и число гостей, и я подготовлю расчёт.' },
+      contact: {
+        de: 'Im Notfall rufen Sie die 112 an. Bei Problemen im Haus antwortet der Gastgeber täglich von 8:00 bis 21:00 Uhr per WhatsApp.',
+        fr: 'En cas d’urgence, appelez le 112. Pour un souci dans la maison, l’hôte répond sur WhatsApp tous les jours de 8 h à 21 h.',
+        ru: 'В экстренной ситуации звоните 112. По вопросам в доме хозяин отвечает в WhatsApp ежедневно с 8:00 до 21:00.' },
+      eat: {
+        de: 'Supermärkte und Restaurants sind 5 Autominuten entfernt. Für ein typisches Abendessen reservieren Sie am Wochenende besser im Voraus.',
+        fr: 'Supermarchés et restaurants sont à 5 minutes en voiture. Pour un dîner typique, réservez à l’avance le week-end.',
+        ru: 'Супермаркеты и рестораны в 5 минутах на машине. Для ужина с местной кухней бронируйте столик заранее на выходные.' },
+      transport: {
+        de: 'Der Bahnhof Campiglia Marittima ist etwa 10 Minuten mit dem Auto entfernt. Der Flughafen Pisa liegt rund 75 km entfernt. Ich kann Ihnen ein Taxi oder einen Mietwagen empfehlen.',
+        fr: 'La gare de Campiglia Marittima est à environ 10 minutes en voiture. L’aéroport de Pise est à environ 75 km. Je peux vous conseiller un taxi ou une voiture de location.',
+        ru: 'Станция Кампилья-Мариттима примерно в 10 минутах на машине. Аэропорт Пизы примерно в 75 км. Могу посоветовать такси или аренду авто.' }
+    },
+    keys: {
+      checkin: { de: ['uhrzeit', 'ankunft', 'abreise', 'einchecken', 'auschecken'], fr: ['heure', 'arrivee', 'horaire', 'enregistrement'], ru: ['выезд', 'во сколько'] },
+      wifi: { de: ['wlan', 'passwort', 'kennwort'], fr: ['mot de passe', 'reseau'], ru: ['парол', 'интернет', 'вайфай'] },
+      parking: { de: ['parkplatz', 'parken', 'wohnmobil'], fr: ['garer', 'stationn', 'camping'], ru: ['парковк', 'стоянк'] },
+      pets: { de: ['haustier', 'hund', 'hunde', 'katze', 'tiere'], fr: ['animal', 'animaux', 'chien'], ru: ['животн', 'собак', 'кошк', 'питомц'] },
+      spa: { de: ['therme', 'thermal'], fr: ['thermes', 'thermal'], ru: ['источник', 'термальн'] },
+      beach: { de: ['strand', 'meer'], fr: ['plage', 'mer'], ru: ['пляж'] },
+      bike: { de: ['fahrrad', 'radweg'], fr: ['velo', 'velos', 'cyclisme', 'bicyclette'], ru: ['велосипед'] },
+      rules: { de: ['regeln', 'hausordnung', 'rauchen', 'ruhezeit', 'larm'], fr: ['regles', 'reglement', 'fumer', 'silence', 'bruit'], ru: ['правил', 'курить', 'курение', 'тишин'] },
+      cancel: { de: ['stornier', 'storno', 'absag'], fr: ['annul', 'rembours'], ru: ['отмен', 'возврат'] },
+      price: { de: ['preis', 'kosten', 'tarif'], fr: ['prix', 'tarif', 'cout'], ru: ['цена', 'цены', 'стоимост', 'сколько стоит'] },
+      contact: { de: ['notfall', 'kontakt', 'telefon', 'hilfe'], fr: ['urgence', 'contact', 'telephone', 'aide'], ru: ['экстренн', 'помощь'] },
+      eat: { de: ['restaurant', 'essen', 'abendessen', 'supermarkt', 'einkauf'], fr: ['restaurant', 'manger', 'diner', 'supermarche', 'courses'], ru: ['ужин', 'поесть', 'кафе', 'продукт'] },
+      transport: { de: ['bahnhof', 'zug', 'flughafen', 'taxi'], fr: ['gare', 'train', 'aeroport', 'taxi'], ru: ['поезд', 'аэропорт', 'такси'] },
+      booking: { de: ['aufenthalt', 'anfrag', 'buchen', 'buchung', 'verfugbar'], fr: ['sejour', 'reserv', 'disponib', 'demande'], ru: ['запрос на', 'бронирован', 'забронир', 'свободн'] }
+    }
+  };
+  FAQ.forEach(function (item) {
+    ['de', 'fr', 'ru'].forEach(function (l) {
+      item.topic[l] = EXTRA.topic[item.id][l];
+      item.a[l] = (EXTRA.a[item.id] || {})[l] || '';
+      item.keys = item.keys.concat((EXTRA.keys[item.id] || {})[l] || []);
+    });
+  });
+
+  function norm(s) { return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  function tokens(s) { return s.split(/[^\p{L}\p{N}]+/u).filter(Boolean); }
+
+  function match(text) {
+    var n = norm(text), toks = tokens(n), best = null, bestScore = 0;
+    FAQ.forEach(function (item) {
+      var sc = 0;
+      item.keys.forEach(function (k) {
+        var nk = norm(k);
+        if (nk.indexOf(' ') > -1) { if (n.indexOf(nk) > -1) sc += nk.length; }
+        else if (nk.length <= 3) { if (toks.indexOf(nk) > -1) sc += nk.length; }
+        else if (toks.some(function (t) { return t.indexOf(nk) === 0; })) sc += nk.length;
+      });
+      if (sc > bestScore) { bestScore = sc; best = item; }
+    });
+    return best;
+  }
+
+  function guessLang() {
+    try {
+      var l = (navigator.language || 'en').slice(0, 2).toLowerCase();
+      if (l === 'it') return 'it';
+      if (l === 'uk') return 'uk';
+      if (l === 'ru') return 'ru';
+      if (l === 'de') return 'de';
+      if (l === 'fr') return 'fr';
+    } catch (e) {}
+    return 'en';
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  var state = {
+    lang: guessLang(),
+    messages: [],
+    forms: {},
+    formCount: 0,
+    topicCounts: {},
+    asked: 0, auto: 0, passed: 0,
+    unanswered: [],
+    requests: []
+  };
+
+  var LOCALE = { it: 'it-IT', en: 'en-GB', uk: 'uk-UA', ru: 'ru-RU', de: 'de-DE', fr: 'fr-FR' };
+  function fmtDate(iso) {
+    try { return new Date(iso + 'T00:00:00').toLocaleDateString(LOCALE[state.lang], { day: 'numeric', month: 'short', year: 'numeric' }); }
+    catch (e) { return iso; }
+  }
+
+  function renderStatic() {
+    var u = UI[state.lang];
+    document.documentElement.lang = state.lang;
+    $('t-title').textContent = u.title;
+    $('t-pill').textContent = u.pill;
+    $('t-intro').textContent = u.intro;
+    $('t-chatsub').textContent = u.chatsub;
+    $('t-try').textContent = u.try_;
+    $('q').placeholder = u.placeholder;
+    $('t-send').textContent = u.send;
+    $('host-h').textContent = u.hostTitle;
+    $('t-hostsub').textContent = u.hostSub;
+    $('t-sq').textContent = u.sq;
+    $('t-sa').textContent = u.sa;
+    $('t-sp').textContent = u.sp;
+    $('t-topics').textContent = u.topics;
+    $('t-requests').textContent = u.requests;
+    $('t-unanswered').textContent = u.unanswered;
+    $('t-note').textContent = u.note;
+
+    var lg = $('langs');
+    lg.innerHTML = '';
+    ['it', 'en', 'uk', 'ru', 'de', 'fr'].forEach(function (code) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = code === 'uk' ? 'УК' : code === 'ru' ? 'РУ' : code.toUpperCase();
+      b.setAttribute('aria-pressed', String(code === state.lang));
+      b.addEventListener('click', function () { state.lang = code; renderAll(); });
+      lg.appendChild(b);
+    });
+
+    var ch = $('chips');
+    ch.innerHTML = '';
+    u.chips.forEach(function (label) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip';
+      b.textContent = label;
+      b.addEventListener('click', function () { ask(label); });
+      ch.appendChild(b);
+    });
+  }
+
+  function formHtml(n) {
+    var u = UI[state.lang], f = state.forms[n];
+    if (f.done) { return '<p class="ok">' + esc(u.done) + '</p>'; }
+    var today = new Date().toISOString().slice(0, 10);
+    return '<div>' + esc(u.formIntro) + '</div>' +
+      '<form data-form="' + n + '" novalidate>' +
+      '<div class="form-fields">' +
+      '<label class="field" for="f' + n + '-name">' + esc(u.name) + '<input id="f' + n + '-name" data-k="name" type="text" value="' + esc(f.name) + '"></label>' +
+      '<label class="field" for="f' + n + '-guests">' + esc(u.guests) + '<input id="f' + n + '-guests" data-k="guests" type="number" min="1" max="12" value="' + esc(f.guests) + '"></label>' +
+      '<label class="field" for="f' + n + '-arrive">' + esc(u.arrive) + '<input id="f' + n + '-arrive" data-k="arrive" type="date" min="' + today + '" value="' + esc(f.arrive) + '"></label>' +
+      '<label class="field" for="f' + n + '-depart">' + esc(u.depart) + '<input id="f' + n + '-depart" data-k="depart" type="date" min="' + today + '" value="' + esc(f.depart) + '"></label>' +
+      '</div>' +
+      (f.error ? '<p class="err">' + esc(UI[state.lang][f.error]) + '</p>' : '') +
+      '<p style="margin:10px 0 0"><button class="btn" type="submit">' + esc(u.submit) + '</button></p>' +
+      '</form>';
+  }
+
+  function renderChat() {
+    var u = UI[state.lang], log = $('log'), html = '';
+    state.messages.forEach(function (m) {
+      if (m.type === 'user') html += '<div class="msg user">' + esc(m.text) + '</div>';
+      else if (m.type === 'greeting') html += '<div class="msg bot">' + esc(u.greeting) + '</div>';
+      else if (m.type === 'fallback') html += '<div class="msg bot">' + esc(u.fallback) + '</div>';
+      else if (m.type === 'faq') {
+        var item = FAQ.filter(function (x) { return x.id === m.id; })[0];
+        html += '<div class="msg bot">' + esc(item.a[state.lang]) + '</div>';
+      } else if (m.type === 'form') {
+        html += '<div class="msg bot form">' + formHtml(m.n) + '</div>';
+      }
+    });
+    log.innerHTML = html;
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function renderHost() {
+    var u = UI[state.lang];
+    $('s-q').textContent = state.asked;
+    $('s-a').textContent = state.auto;
+    $('s-p').textContent = state.passed;
+
+    var ids = Object.keys(state.topicCounts).sort(function (a, b) { return state.topicCounts[b] - state.topicCounts[a]; });
+    var max = ids.length ? state.topicCounts[ids[0]] : 1;
+    $('topics').innerHTML = ids.length ? ids.map(function (id) {
+      var item = FAQ.filter(function (x) { return x.id === id; })[0];
+      return '<div class="topic"><span>' + esc(item.topic[state.lang]) + '</span><span>' + state.topicCounts[id] +
+        '</span><i style="width:' + Math.max(6, Math.round(state.topicCounts[id] / max * 100)) + '%"></i></div>';
+    }).join('') : '<p class="empty">' + esc(u.noTopics) + '</p>';
+
+    $('requests').innerHTML = state.requests.length ? state.requests.map(function (r) {
+      return '<div class="req">' + esc(u.reqFmt(r, fmtDate)) + '</div>';
+    }).join('') : '<p class="empty">' + esc(u.noRequests) + '</p>';
+
+    $('unanswered').innerHTML = state.unanswered.length ? state.unanswered.map(function (t) {
+      return '<div class="unq">' + esc(t) + '</div>';
+    }).join('') : '<p class="empty">' + esc(u.noUnanswered) + '</p>';
+  }
+
+  function renderAll() { renderStatic(); renderChat(); renderHost(); }
+
+  function ask(text) {
+    text = String(text).trim();
+    if (!text) return;
+    if (/[Ѐ-ӿ]/.test(text)) {
+      var want = /[іїєґІЇЄҐ]/.test(text) ? 'uk' : /[ыэъёЫЭЪЁ]/.test(text) ? 'ru' : (state.lang === 'uk' || state.lang === 'ru') ? state.lang : 'uk';
+      if (want !== state.lang) { state.lang = want; renderStatic(); }
+    }
+    state.messages.push({ type: 'user', text: text });
+    state.asked += 1;
+    var item = match(text);
+    if (!item) {
+      state.passed += 1;
+      state.unanswered.push(text);
+      state.messages.push({ type: 'fallback' });
+    } else {
+      state.auto += 1;
+      state.topicCounts[item.id] = (state.topicCounts[item.id] || 0) + 1;
+      if (item.form) {
+        state.formCount += 1;
+        state.forms[state.formCount] = { name: '', guests: '2', arrive: '', depart: '', error: '', done: false };
+        state.messages.push({ type: 'form', n: state.formCount });
+      } else {
+        state.messages.push({ type: 'faq', id: item.id });
+      }
+    }
+    renderChat();
+    renderHost();
+  }
+
+  $('composer').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var q = $('q');
+    var v = q.value;
+    q.value = '';
+    ask(v);
+  });
+
+  var log = $('log');
+  log.addEventListener('input', function (e) {
+    var t = e.target, form = t.closest ? t.closest('form[data-form]') : null;
+    if (!form || !t.getAttribute('data-k')) return;
+    state.forms[form.getAttribute('data-form')][t.getAttribute('data-k')] = t.value;
+  });
+  log.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (!form.getAttribute || !form.getAttribute('data-form')) return;
+    e.preventDefault();
+    var n = form.getAttribute('data-form'), f = state.forms[n];
+    if (!f.name.trim() || !f.guests || !f.arrive || !f.depart) { f.error = 'errFill'; renderChat(); return; }
+    if (f.depart <= f.arrive) { f.error = 'errDates'; renderChat(); return; }
+    f.error = '';
+    f.done = true;
+    state.requests.push({ name: f.name.trim(), guests: f.guests, arrive: f.arrive, depart: f.depart });
+    renderChat();
+    renderHost();
+  });
+
+  state.messages.push({ type: 'greeting' });
+  renderStatic();
+  ask(UI[state.lang].chips[0]);
+})();
+</script>
+

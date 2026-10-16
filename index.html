@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html,body{margin:0}</style>
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Ginestra Lead Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #f4f2ea; --surface: #fffefa; --ink: #16231f; --muted: #5d6b66; --line: #d9d6c8;
+    --brand: #0e5f5c; --brand-ink: #ffffff; --accent: #e9c441; --accent-ink: #3a2f00;
+    --c-booking: #0e5f5c; --c-price: #8a5a00; --c-info: #2f5d9e; --c-cancel: #7a4a8c; --c-complaint: #b3261e; --c-other: #5d6b66;
+    --ok: #1f7a3d; --warn-bg: #fff3cf; --warn-ink: #5a4300; --soft: #ebe8dc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1a18; --surface: #162421; --ink: #e8efe9; --muted: #9db0aa; --line: #2b3d39;
+      --brand: #4fc2bb; --brand-ink: #06201e; --accent: #e9c441; --accent-ink: #2a2200;
+      --c-booking: #4fc2bb; --c-price: #e5b24a; --c-info: #7fb0f0; --c-cancel: #c79ad8; --c-complaint: #ff8a80; --c-other: #9db0aa;
+      --ok: #6fd08c; --warn-bg: #3a3010; --warn-ink: #f3dc8c; --soft: #1d2f2b;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1a18; --surface: #162421; --ink: #e8efe9; --muted: #9db0aa; --line: #2b3d39;
+    --brand: #4fc2bb; --brand-ink: #06201e; --accent: #e9c441; --accent-ink: #2a2200;
+    --c-booking: #4fc2bb; --c-price: #e5b24a; --c-info: #7fb0f0; --c-cancel: #c79ad8; --c-complaint: #ff8a80; --c-other: #9db0aa;
+    --ok: #6fd08c; --warn-bg: #3a3010; --warn-ink: #f3dc8c; --soft: #1d2f2b;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: 'Public Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5; margin: 0;
+    padding-block: 24px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 20px; }
+  h1, h2, h3 { font-family: 'Bricolage Grotesque', 'Public Sans', sans-serif; margin: 0; text-wrap: balance; line-height: 1.15; }
+  h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); }
+  h2 { font-size: 1.15rem; }
+  header { display: grid; gap: 8px; }
+  .pill { display: inline-block; background: var(--accent); color: var(--accent-ink); font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 2px 9px; border-radius: 99px; margin-right: 8px; vertical-align: middle; }
+  .lead { color: var(--muted); max-width: 66ch; margin: 0; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; min-width: 0; }
+  .stat b { display: block; font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.6rem; line-height: 1.1; }
+  .stat span { color: var(--muted); font-size: .8rem; }
+  .main { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 760px) { .main { grid-template-columns: minmax(0, 1fr); } }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; min-width: 0; }
+  .list { display: grid; gap: 6px; margin-top: 10px; }
+  .item { display: grid; gap: 4px; text-align: left; width: 100%; font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; cursor: pointer; }
+  .item[aria-current="true"] { border-color: var(--brand); box-shadow: 0 0 0 2px var(--brand) inset; }
+  .item .top { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .item .snip { color: var(--muted); font-size: .86rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .tag { font-size: .72rem; font-weight: 600; padding: 1px 8px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap; }
+  .lang { font-size: .72rem; font-weight: 600; background: var(--soft); border-radius: 6px; padding: 1px 6px; color: var(--muted); }
+  .steps { display: grid; gap: 12px; margin-top: 12px; }
+  .step { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; }
+  .num { width: 26px; height: 26px; border-radius: 50%; background: var(--brand); color: var(--brand-ink); font-weight: 600; font-size: .82rem; display: grid; place-items: center; }
+  .step h3 { font-size: .98rem; margin-bottom: 2px; }
+  .msg { white-space: pre-wrap; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; overflow-wrap: anywhere; }
+  dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 12px; margin: 0; }
+  dt { color: var(--muted); } dd { margin: 0; overflow-wrap: anywhere; }
+  .note { background: var(--warn-bg); color: var(--warn-ink); border-radius: 10px; padding: 8px 12px; font-size: .88rem; }
+  .ok { color: var(--ok); font-weight: 600; }
+  textarea, input { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; width: 100%; }
+  textarea { min-height: 110px; resize: vertical; }
+  label { display: grid; gap: 4px; font-size: .86rem; color: var(--muted); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  button.btn { font: inherit; font-weight: 600; border-radius: 10px; padding: 8px 14px; border: 1px solid var(--brand); cursor: pointer; background: var(--brand); color: var(--brand-ink); }
+  button.btn.ghost { background: transparent; color: var(--brand); }
+  button.btn:disabled { opacity: .5; cursor: default; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .form { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .form .full { grid-column: 1 / -1; }
+  .misses { margin: 6px 0 0; padding-left: 18px; color: var(--muted); font-size: .88rem; }
+  footer { color: var(--muted); font-size: .85rem; max-width: 80ch; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .tabs button { font: inherit; font-size: .82rem; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 99px; padding: 3px 11px; cursor: pointer; }
+  .tabs button[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><span class="pill">Demo</span><span style="color:var(--muted);font-size:.9rem">Fictional business, sample data</span></div>
+    <h1>Ginestra Lead Desk</h1>
+    <p class="lead">Guest enquiries arrive in any language. Each one is read, sorted, checked for duplicates, and answered with a draft in the guest's own language. Nothing goes out without a person approving it.</p>
+  </header>
+
+  <section class="stats" id="stats" aria-label="Summary"></section>
+
+  <section class="main">
+    <div class="card">
+      <h2>Inbox</h2>
+      <div class="tabs" id="filters" role="group" aria-label="Filter"></div>
+      <div class="list" id="list"></div>
+    </div>
+    <div class="card" id="detail"></div>
+  </section>
+
+  <section class="card">
+    <h2>Try your own enquiry</h2>
+    <p class="lead" style="margin:4px 0 10px">Write it in Italian, English, German, French, Russian or Ukrainian.</p>
+    <form class="form" id="form">
+      <label>Name<input id="f-name" autocomplete="off" placeholder="Anna"></label>
+      <label>Email<input id="f-email" autocomplete="off" placeholder="anna@example.com"></label>
+      <label class="full">Message<textarea id="f-text" placeholder="Hello, do you have a room from 5/09 to 8/09 for 2 people?"></textarea></label>
+      <div class="full"><button class="btn" type="submit">Process enquiry</button> <span id="f-err" style="color:var(--c-complaint);margin-left:8px"></span></div>
+    </form>
+  </section>
+
+  <section class="card" id="check"></section>
+
+  <footer>This demo uses fixed keyword rules so it runs in a single page with no server. A real build replaces the rules with an AI model for free-form messages, connects to your inbox, calendar and booking sheet, and keeps the same approval step. Sample guests, prices and policies are invented.</footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  function norm(s) { return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9Ѐ-ӿ]+/g, ' ').trim(); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  var CATS = {
+    booking: { label: 'Booking request', auto: true },
+    price: { label: 'Price question', auto: true },
+    info: { label: 'Practical info', auto: true },
+    cancel: { label: 'Cancellation', auto: false },
+    complaint: { label: 'Problem / complaint', auto: false },
+    other: { label: 'Other', auto: false }
+  };
+
+  var KEYS = {
+    booking: ['disponib', 'prenot', 'camera', 'soggiorn', 'book', 'availab', 'reserv', 'room', 'buch', 'verfug', 'zimmer', 'aufenthalt', 'chambre', 'sejour', 'забронир', 'бронир', 'свободн', 'номер', 'кімнат', 'вільн', 'бронюв'],
+    price: ['prezzo', 'prezzi', 'costo', 'costa', 'price', 'how much', 'rates', 'preis', 'kosten', 'tarif', 'prix', 'сколько стоит', 'стоимост', 'цена', 'цены', 'ціна', 'ціни', 'скільки коштує'],
+    info: ['check in', 'check out', 'wifi', 'wi fi', 'wlan', 'passwort', 'password', 'parking', 'parcheggio', 'parken', 'parkplatz', 'animali', 'cane', 'cani', 'pets', 'dog', 'haustier', 'hund', 'animaux', 'chien', 'orario', 'uhrzeit', 'heure', 'arrivee', 'wann', 'парковк', 'собак', 'время заселения', 'пароль', 'паркув', 'пароль wi fi'],
+    cancel: ['annull', 'cancel', 'storn', 'annul', 'отмен', 'скасув', 'rimbors', 'refund', 'rembours', 'erstattung'],
+    complaint: ['problema', 'problem', 'rotto', 'non funziona', 'broken', 'not working', 'kaputt', 'funktioniert nicht', 'panne', 'ne marche pas', 'sporco', 'dirty', 'schmutzig', 'deluso', 'disappointed', 'enttauscht', 'неисправ', 'не работает', 'сломан', 'грязн', 'не працює', 'брудн', 'lamentela', 'complaint', 'beschwerde', 'plainte', 'жалоб', 'скарг', 'no hot water', 'kein warm']
+  };
+  var COMPLAINT_BONUS = 12;
+  var URGENT = ['urgen', 'subito', 'asap', 'dringend', 'sofort', 'immediatement', 'срочно', 'терміново', 'tonight', 'stasera', 'ieri sera', 'hilfe', 'help', 'aiuto'];
+
+  var STOP = {
+    it: ['il', 'la', 'di', 'che', 'per', 'con', 'sono', 'vorrei', 'buongiorno', 'salve', 'grazie', 'una', 'camera', 'posso', 'avete', 'ciao', 'quanto', 'dove', 'gentile', 'non', 'dal', 'al'],
+    en: ['the', 'and', 'is', 'for', 'with', 'would', 'like', 'hello', 'hi', 'please', 'thanks', 'you', 'are', 'do', 'we', 'there', 'available', 'need', 'my', 'how'],
+    de: ['der', 'die', 'das', 'und', 'ich', 'wir', 'ist', 'nicht', 'fur', 'mit', 'guten', 'hallo', 'danke', 'haben', 'sie', 'bitte', 'ein', 'eine', 'zimmer', 'moglich', 'es', 'gibt'],
+    fr: ['le', 'les', 'des', 'une', 'vous', 'nous', 'je', 'est', 'pour', 'avec', 'merci', 'bonjour', 'bonsoir', 'avez', 'du', 'au', 'peut', 'on', 'quelle']
+  };
+
+  function detectLang(text) {
+    if (/[Ѐ-ӿ]/.test(text)) return /[іїєґІЇЄҐ]/.test(text) ? 'uk' : 'ru';
+    var toks = norm(text).split(' ');
+    var best = 'en', bestScore = 0;
+    Object.keys(STOP).forEach(function (l) {
+      var set = STOP[l], sc = 0;
+      toks.forEach(function (t) { if (set.indexOf(t) !== -1) sc++; });
+      if (sc > bestScore) { best = l; bestScore = sc; }
+    });
+    return best;
+  }
+
+  function scoreCat(n, padded, toks) {
+    var out = {};
+    Object.keys(KEYS).forEach(function (cat) {
+      var s = 0;
+      KEYS[cat].forEach(function (k) {
+        var nk = norm(k), hit = false;
+        if (nk.indexOf(' ') !== -1) hit = padded.indexOf(' ' + nk + ' ') !== -1 || n.indexOf(nk) !== -1;
+        else if (nk.length <= 3) hit = toks.indexOf(nk) !== -1;
+        else hit = toks.some(function (t) { return t.indexOf(nk) === 0; });
+        if (hit) s += nk.length;
+      });
+      if (cat === 'complaint' && s > 0) s += COMPLAINT_BONUS;
+      out[cat] = s;
+    });
+    return out;
+  }
+
+  var MONTHS = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic', 'jan', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'dec', 'mai', 'juin', 'juil', 'aou', 'янв', 'фев', 'мар', 'апр', 'ма', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек', 'січ', 'лют', 'бер', 'кві', 'тра', 'чер', 'лип', 'сер', 'вер', 'жов', 'лис', 'гру'];
+  function isMonth(w) { var n = norm(w); return MONTHS.some(function (m) { return n.indexOf(norm(m)) === 0; }); }
+
+  function extract(text) {
+    var low = text.toLowerCase(), out = { arrive: '', depart: '', guests: '', nights: '' };
+    var m = low.match(/(\d{1,2})\s*(?:-|–|al|au|to|bis|по|до)\s*(\d{1,2})\s+([a-zа-яіїєґéûôèàç]{3,})/);
+    if (m && isMonth(m[3])) { out.arrive = m[1] + ' ' + m[3]; out.depart = m[2] + ' ' + m[3]; }
+    else {
+      var d = low.match(/\b\d{1,2}[\/.]\d{1,2}(?:[\/.]\d{2,4})?\b/g);
+      if (d) { out.arrive = d[0]; if (d[1]) out.depart = d[1]; }
+    }
+    var g = low.match(/(\d+)\s*(?:persone|people|guests|adults|personen|gaste|gäste|personnes|voyageurs|человек|гост|людей|особ|осіб|ospiti)/);
+    if (g) out.guests = g[1];
+    var nn = low.match(/(\d+)\s*(?:nights|notti|nächte|nachte|nuits|ночи|ночей|ночі|ночей)/);
+    if (nn) out.nights = nn[1];
+    return out;
+  }
+
+  function classify(text) {
+    var n = norm(text), padded = ' ' + n + ' ', toks = n.split(' ');
+    var sc = scoreCat(n, padded, toks), best = 'other', bs = 0;
+    ['complaint', 'cancel', 'booking', 'price', 'info'].forEach(function (c) { if (sc[c] > bs) { best = c; bs = sc[c]; } });
+    var urgent = URGENT.some(function (u) { return n.indexOf(norm(u)) !== -1; });
+    if (best === 'complaint') urgent = true;
+    return { cat: best, score: bs, urgent: urgent };
+  }
+
+  var FMT = {
+    it: { dates: function (a, b) { return b ? 'dal ' + a + ' al ' + b : 'per il ' + a; }, guests: function (n) { return n + (n === '1' ? ' persona' : ' persone'); }, hello: 'Buongiorno', sign: 'Cordiali saluti,\nCasa Ginestra' },
+    en: { dates: function (a, b) { return b ? 'from ' + a + ' to ' + b : 'on ' + a; }, guests: function (n) { return n + (n === '1' ? ' guest' : ' guests'); }, hello: 'Hello', sign: 'Kind regards,\nCasa Ginestra' },
+    de: { dates: function (a, b) { return b ? 'vom ' + a + ' bis ' + b : 'am ' + a; }, guests: function (n) { return n + (n === '1' ? ' Person' : ' Personen'); }, hello: 'Guten Tag', sign: 'Freundliche Grüße\nCasa Ginestra' },
+    fr: { dates: function (a, b) { return b ? 'du ' + a + ' au ' + b : 'le ' + a; }, guests: function (n) { return n + (n === '1' ? ' personne' : ' personnes'); }, hello: 'Bonjour', sign: 'Cordialement,\nCasa Ginestra' },
+    ru: { dates: function (a, b) { return b ? 'с ' + a + ' по ' + b : a; }, guests: function (n) { return n + ' чел.'; }, hello: 'Здравствуйте', sign: 'С уважением,\nCasa Ginestra' },
+    uk: { dates: function (a, b) { return b ? 'з ' + a + ' по ' + b : a; }, guests: function (n) { return n + ' осіб'; }, hello: 'Добрий день', sign: 'З повагою,\nCasa Ginestra' }
+  };
+  var BODY = {
+    booking: {
+      it: 'grazie per la richiesta{d}. Verifico la disponibilità e le rispondo entro oggi con prezzo e condizioni.',
+      en: 'thank you for your request{d}. I am checking availability and will reply today with price and conditions.',
+      de: 'vielen Dank für Ihre Anfrage{d}. Ich prüfe die Verfügbarkeit und melde mich heute mit Preis und Bedingungen.',
+      fr: 'merci pour votre demande{d}. Je vérifie les disponibilités et vous réponds aujourd’hui avec le prix et les conditions.',
+      ru: 'спасибо за запрос{d}. Проверяю наличие мест и сегодня отвечу с ценой и условиями.',
+      uk: 'дякуємо за запит{d}. Перевіряю наявність і сьогодні відповім із ціною та умовами.'
+    },
+    price: {
+      it: 'grazie per l’interesse{d}. Le tariffe partono da 95 € a notte per 2 ospiti in bassa stagione, da 130 € in estate (dati dimostrativi). Mi indichi date e numero di ospiti e preparo un preventivo.',
+      en: 'thank you for your interest{d}. Rates start at 95 € per night for 2 guests in low season and 130 € in summer (demo figures). Send me your dates and number of guests and I will prepare a quote.',
+      de: 'vielen Dank für Ihr Interesse{d}. Die Preise beginnen bei 95 € pro Nacht für 2 Gäste in der Nebensaison, 130 € im Sommer (Beispieldaten). Nennen Sie mir Reisezeitraum und Gästezahl, dann erstelle ich ein Angebot.',
+      fr: 'merci de votre intérêt{d}. Les tarifs commencent à 95 € la nuit pour 2 personnes en basse saison et 130 € en été (données d’exemple). Indiquez-moi vos dates et le nombre de voyageurs et je prépare un devis.',
+      ru: 'спасибо за интерес{d}. Цены от 95 € за ночь для 2 гостей в низкий сезон и от 130 € летом (пример). Напишите даты и число гостей, и я подготовлю расчёт.',
+      uk: 'дякуємо за інтерес{d}. Ціни від 95 € за ніч для 2 гостей у низький сезон і від 130 € влітку (приклад). Напишіть дати та кількість гостей, і я підготую розрахунок.'
+    },
+    info: {
+      it: 'ecco le informazioni principali: check-in 15:00–20:00 in autonomia, parcheggio gratuito nel cortile, cani di taglia piccola e media ammessi, Wi-Fi in tutta la casa.',
+      en: 'here is the key information: self check-in 15:00–20:00, free parking in the courtyard, small and medium dogs welcome, Wi-Fi throughout the house.',
+      de: 'hier die wichtigsten Informationen: Self-Check-in 15:00–20:00 Uhr, kostenloser Parkplatz im Hof, kleine und mittelgroße Hunde willkommen, WLAN im ganzen Haus.',
+      fr: 'voici les informations principales : arrivée autonome de 15 h à 20 h, parking gratuit dans la cour, chiens de petite et moyenne taille acceptés, Wi-Fi dans toute la maison.',
+      ru: 'вот основная информация: самостоятельное заселение с 15:00 до 20:00, бесплатная парковка во дворе, собаки мелких и средних пород допускаются, Wi-Fi во всём доме.',
+      uk: 'ось основна інформація: самостійне заселення з 15:00 до 20:00, безкоштовна парковка у дворі, собаки малих і середніх порід дозволені, Wi-Fi в усьому будинку.'
+    },
+    cancel: {
+      it: 'ho preso in carico la sua richiesta di annullamento. La cancellazione è gratuita fino a 14 giorni prima dell’arrivo; controllo la sua prenotazione e le confermo a breve.',
+      en: 'I have received your cancellation request. Cancellation is free up to 14 days before arrival; I am checking your booking and will confirm shortly.',
+      de: 'ich habe Ihre Stornierungsanfrage erhalten. Die Stornierung ist bis 14 Tage vor Anreise kostenlos; ich prüfe Ihre Buchung und bestätige in Kürze.',
+      fr: 'j’ai bien reçu votre demande d’annulation. L’annulation est gratuite jusqu’à 14 jours avant l’arrivée ; je vérifie votre réservation et vous confirme rapidement.',
+      ru: 'я получил ваш запрос на отмену. Отмена бесплатна за 14 дней до заезда; проверяю бронирование и скоро подтвержу.',
+      uk: 'я отримав ваш запит на скасування. Скасування безкоштовне за 14 днів до заїзду; перевіряю бронювання і скоро підтверджу.'
+    },
+    complaint: {
+      it: 'mi dispiace molto per il disagio. Ho segnalato subito il problema al gestore, che la contatterà al più presto per risolverlo.',
+      en: 'I am very sorry for the trouble. I have flagged the problem to the host straight away, who will contact you as soon as possible to fix it.',
+      de: 'es tut mir sehr leid. Ich habe das Problem sofort an den Gastgeber weitergegeben, der sich so schnell wie möglich bei Ihnen meldet.',
+      fr: 'je suis vraiment désolé pour ce désagrément. J’ai immédiatement signalé le problème à l’hôte, qui vous contactera dès que possible.',
+      ru: 'мне очень жаль. Я сразу передал проблему хозяину, он свяжется с вами как можно скорее.',
+      uk: 'мені дуже шкода. Я одразу передав проблему господарю, він зв’яжеться з вами якнайшвидше.'
+    },
+    other: {
+      it: 'grazie per il messaggio. Lo inoltro al gestore, che le risponderà personalmente a breve.',
+      en: 'thank you for your message. I am passing it to the host, who will reply personally shortly.',
+      de: 'vielen Dank für Ihre Nachricht. Ich leite sie an den Gastgeber weiter, der sich persönlich bei Ihnen meldet.',
+      fr: 'merci pour votre message. Je le transmets à l’hôte, qui vous répondra personnellement sous peu.',
+      ru: 'спасибо за сообщение. Передаю его хозяину, он ответит вам лично.',
+      uk: 'дякуємо за повідомлення. Передаю його господарю, він відповість вам особисто.'
+    }
+  };
+
+  function draft(name, lang, cat, ex) {
+    var f = FMT[lang];
+    var bits = [];
+    if (cat === 'booking' || cat === 'price') {
+      if (ex.arrive) bits.push(f.dates(ex.arrive, ex.depart));
+      if (ex.guests) bits.push(f.guests(ex.guests));
+    }
+    var d = bits.length ? ' (' + bits.join(', ') + ')' : '';
+    var first = f.hello + (name ? ' ' + name : '') + ',';
+    var body = BODY[cat][lang].replace('{d}', d);
+    if (lang === 'ru' || lang === 'uk') body = body.charAt(0).toUpperCase() + body.slice(1);
+    else if (lang !== 'de') body = body.charAt(0).toUpperCase() + body.slice(1);
+    else body = body.charAt(0).toUpperCase() + body.slice(1);
+    return first + '\n\n' + body + '\n\n' + f.sign;
+  }
+
+  var LANGNAME = { it: 'Italian', en: 'English', de: 'German', fr: 'French', ru: 'Russian', uk: 'Ukrainian' };
+
+  var SAMPLES = [
+    { name: 'Marco', email: 'marco.rossi@example.com', text: 'Buongiorno, avete una camera libera dal 12/07 al 15/07 per 2 persone? Grazie, Marco', expect: 'booking' },
+    { name: 'Emma', email: 'emma.w@example.com', text: 'Hi, how much is a night for 4 people in August? Thanks, Emma', expect: 'price' },
+    { name: 'Jonas', email: 'jonas.k@example.com', text: 'Guten Tag, ist das Parken beim Haus möglich? Und gibt es WLAN?', expect: 'info' },
+    { name: 'Camille', email: 'camille.d@example.com', text: 'Bonjour, avez-vous une chambre disponible du 3 au 6 septembre pour 2 personnes ?', expect: 'booking' },
+    { name: 'Ольга', email: 'olga.s@example.com', text: 'Здравствуйте, сколько стоит номер на 3 ночи? Нас двое.', expect: 'price' },
+    { name: 'Олена', email: 'olena.m@example.com', text: 'Добрий день! Чи є вільна кімната на вихідні? Нас 3 особи.', expect: 'booking' },
+    { name: 'Giulia', email: 'giulia.b@example.com', text: 'Salve, il WiFi in camera non funziona da ieri sera, è urgente', expect: 'complaint' },
+    { name: 'Tom', email: 'tom.h@example.com', text: 'Hello, I need to cancel my booking for 20/08. Is a refund possible?', expect: 'cancel' },
+    { name: 'Marco', email: 'marco.rossi@example.com', text: 'Ciao, ripeto la richiesta: camera libera dal 12/07 al 15/07 per 2 persone? Marco', expect: 'booking' },
+    { name: 'Lena', email: 'lena.f@example.com', text: 'Die Dusche ist kaputt und es gibt kein warmes Wasser. Bitte dringend helfen!', expect: 'complaint' },
+    { name: 'Sophie', email: 'sophie.l@example.com', text: 'Hi! Do you also organise weddings or corporate events? We are about 60 people.', expect: 'other' },
+    { name: 'Hugo', email: 'hugo.m@example.com', text: 'Bonjour, à quelle heure est l’arrivée et peut-on venir avec un chien ?', expect: 'info' }
+  ];
+
+  var leads = [];
+  var selected = 0;
+  var filter = 'all';
+  var counter = 0;
+
+  function process(raw) {
+    var cl = classify(raw.text), lang = detectLang(raw.text), ex = extract(raw.text);
+    var lead = {
+      id: ++counter, name: raw.name, email: raw.email, text: raw.text, lang: lang, cat: cl.cat, urgent: cl.urgent,
+      ex: ex, expect: raw.expect || null, status: 'new', dupOf: null, edit: false, body: ''
+    };
+    var key = norm(raw.email || '');
+    for (var i = 0; i < leads.length; i++) {
+      var o = leads[i];
+      if (key && norm(o.email) === key && o.cat === lead.cat) { lead.dupOf = o.id; break; }
+    }
+    lead.body = draft(raw.name, lang, cl.cat, ex);
+    return lead;
+  }
+
+  SAMPLES.forEach(function (s) { leads.push(process(s)); });
+
+  var $ = function (id) { return document.getElementById(id); };
+  function byId(id) { return leads.filter(function (l) { return l.id === id; })[0]; }
+  function statusLabel(l) {
+    if (l.status === 'sent') return 'Approved, sent (demo)';
+    if (l.status === 'escalated') return 'Escalated to owner';
+    if (l.status === 'merged') return 'Merged as duplicate';
+    return CATS[l.cat].auto && !l.dupOf ? 'Draft ready for approval' : 'Needs a person';
+  }
+
+  function renderStats() {
+    var langs = {};
+    leads.forEach(function (l) { langs[l.lang] = 1; });
+    var auto = leads.filter(function (l) { return CATS[l.cat].auto && !l.dupOf; }).length;
+    var dup = leads.filter(function (l) { return l.dupOf; }).length;
+    var human = leads.filter(function (l) { return !CATS[l.cat].auto && !l.dupOf; }).length;
+    var urgent = leads.filter(function (l) { return l.urgent; }).length;
+    var data = [[leads.length, 'Enquiries'], [Object.keys(langs).length, 'Languages'], [auto, 'Ready for 1-click approval'], [human, 'Need a person'], [urgent, 'Urgent'], [dup, 'Duplicates']];
+    $('stats').innerHTML = data.map(function (d) { return '<div class="stat"><b>' + d[0] + '</b><span>' + d[1] + '</span></div>'; }).join('');
+  }
+
+  function renderFilters() {
+    var opts = [['all', 'All'], ['review', 'Needs a person'], ['ready', 'Ready'], ['urgent', 'Urgent']];
+    $('filters').innerHTML = opts.map(function (o) { return '<button type="button" data-f="' + o[0] + '" aria-pressed="' + (filter === o[0]) + '">' + o[1] + '</button>'; }).join('');
+  }
+
+  function visible() {
+    return leads.filter(function (l) {
+      if (filter === 'urgent') return l.urgent;
+      if (filter === 'review') return !CATS[l.cat].auto || l.dupOf;
+      if (filter === 'ready') return CATS[l.cat].auto && !l.dupOf;
+      return true;
+    });
+  }
+
+  function renderList() {
+    var vis = visible();
+    if (!vis.length) { $('list').innerHTML = '<p class="lead">Nothing here.</p>'; return; }
+    $('list').innerHTML = vis.map(function (l) {
+      return '<button type="button" class="item" data-id="' + l.id + '" aria-current="' + (l.id === selected) + '">' +
+        '<span class="top"><span class="tag" style="color:var(--c-' + l.cat + ')">' + CATS[l.cat].label + '</span><span class="lang">' + l.lang.toUpperCase() + '</span>' +
+        (l.urgent ? '<span class="tag" style="color:var(--c-complaint)">Urgent</span>' : '') +
+        (l.dupOf ? '<span class="tag" style="color:var(--muted)">Duplicate</span>' : '') + '</span>' +
+        '<span class="snip">' + esc(l.text) + '</span></button>';
+    }).join('');
+  }
+
+  function renderDetail() {
+    var l = byId(selected);
+    if (!l) { $('detail').innerHTML = '<p class="lead">Select an enquiry.</p>'; return; }
+    var ex = l.ex, fields = [];
+    if (ex.arrive) fields.push(['Dates', ex.arrive + (ex.depart ? ' → ' + ex.depart : '')]);
+    if (ex.nights) fields.push(['Nights', ex.nights]);
+    if (ex.guests) fields.push(['Guests', ex.guests]);
+    var needsPerson = !CATS[l.cat].auto || l.dupOf;
+    var h = '<h2>' + esc(l.name || 'Guest') + ' <span style="font-weight:400;color:var(--muted);font-size:.9rem">' + esc(l.email || 'no email') + '</span></h2>';
+    h += '<div class="steps">';
+    h += '<div class="step"><span class="num">1</span><div><h3>Received</h3><div class="msg">' + esc(l.text) + '</div></div></div>';
+    h += '<div class="step"><span class="num">2</span><div><h3>Understood</h3><dl>' +
+      '<dt>Language</dt><dd>' + LANGNAME[l.lang] + '</dd>' +
+      '<dt>Type</dt><dd><span class="tag" style="color:var(--c-' + l.cat + ')">' + CATS[l.cat].label + '</span></dd>' +
+      '<dt>Urgency</dt><dd>' + (l.urgent ? 'Urgent' : 'Normal') + '</dd>' +
+      fields.map(function (f) { return '<dt>' + f[0] + '</dt><dd>' + esc(f[1]) + '</dd>'; }).join('') +
+      '</dl></div></div>';
+    h += '<div class="step"><span class="num">3</span><div><h3>Checked</h3>' +
+      (l.dupOf ? '<div class="note">Same guest and same request as #' + l.dupOf + '. Merge it so they do not get two replies.</div>' : '<span class="ok">No duplicate found.</span>') + '</div></div>';
+    h += '<div class="step"><span class="num">4</span><div><h3>Draft reply in ' + LANGNAME[l.lang] + '</h3>';
+    if (l.edit) h += '<textarea id="draft" aria-label="Edit draft">' + esc(l.body) + '</textarea>';
+    else h += '<div class="msg">' + esc(l.body) + '</div>';
+    if (needsPerson && !l.dupOf) h += '<div class="note" style="margin-top:8px">This type is not sent automatically. The owner decides what to say; the draft is only a starting point.</div>';
+    h += '</div></div>';
+    h += '<div class="step"><span class="num">5</span><div><h3>Decision</h3><p style="margin:0 0 4px"><b>' + statusLabel(l) + '</b></p>';
+    if (l.status === 'new') {
+      h += '<div class="row">';
+      if (l.dupOf) h += '<button class="btn" data-a="merge">Merge with #' + l.dupOf + '</button>';
+      else if (needsPerson) h += '<button class="btn" data-a="escalate">Send to owner</button>';
+      else h += '<button class="btn" data-a="send">Approve and send (demo)</button>';
+      h += '<button class="btn ghost" data-a="edit">' + (l.edit ? 'Save edit' : 'Edit draft') + '</button></div>';
+    } else {
+      h += '<div class="row"><button class="btn ghost" data-a="reset">Undo</button></div>';
+    }
+    h += '<p style="color:var(--muted);font-size:.85rem;margin:8px 0 0">In this demo nothing is actually sent.</p></div></div></div>';
+    $('detail').innerHTML = h;
+  }
+
+  function renderCheck() {
+    var test = leads.filter(function (l) { return l.expect; });
+    var ok = test.filter(function (l) { return l.cat === l.expect; });
+    var bad = test.filter(function (l) { return l.cat !== l.expect; });
+    var h = '<h2>Test result</h2><p style="margin:6px 0 0"><b>' + ok.length + ' of ' + test.length + '</b> sample enquiries sorted into the category I expected when I wrote them.</p>';
+    if (bad.length) h += '<ul class="misses">' + bad.map(function (l) { return '<li>#' + l.id + ': expected ' + CATS[l.expect].label + ', got ' + CATS[l.cat].label + '</li>'; }).join('') + '</ul>';
+    h += '<p style="color:var(--muted);font-size:.86rem;margin:6px 0 0">These are my own examples, so this proves the pipeline works, not how accurate it is on real traffic. A real project starts by measuring this on your past enquiries.</p>';
+    $('check').innerHTML = h;
+  }
+
+  function renderAll() { renderStats(); renderFilters(); renderList(); renderDetail(); renderCheck(); }
+
+  $('list').addEventListener('click', function (e) {
+    var b = e.target.closest('.item'); if (!b) return;
+    selected = Number(b.getAttribute('data-id')); renderList(); renderDetail();
+  });
+  $('filters').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    filter = b.getAttribute('data-f'); renderFilters(); renderList();
+  });
+  $('detail').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-a]'); if (!b) return;
+    var l = byId(selected), a = b.getAttribute('data-a');
+    if (a === 'edit') {
+      if (l.edit) { var t = $('draft'); if (t) l.body = t.value; }
+      l.edit = !l.edit;
+    } else {
+      if (l.edit) { var t2 = $('draft'); if (t2) l.body = t2.value; l.edit = false; }
+      if (a === 'send') l.status = 'sent';
+      if (a === 'escalate') l.status = 'escalated';
+      if (a === 'merge') l.status = 'merged';
+      if (a === 'reset') l.status = 'new';
+    }
+    renderDetail();
+  });
+
+  $('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var text = $('f-text').value.trim();
+    if (text.length < 5) { $('f-err').textContent = 'Write a message first.'; return; }
+    $('f-err').textContent = '';
+    var l = process({ name: $('f-name').value.trim(), email: $('f-email').value.trim(), text: text });
+    leads.push(l); selected = l.id; filter = 'all';
+    $('f-text').value = '';
+    renderAll();
+    $('detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  renderAll();
+  window.__LD = { classify: classify, detectLang: detectLang, extract: extract, leads: leads };
+})();
+</script>
+
